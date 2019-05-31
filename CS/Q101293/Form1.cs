@@ -3,6 +3,8 @@ using System.Data;
 using System.Windows.Forms;
 using DevExpress.XtraEditors.Controls;
 using DevExpress.XtraEditors.Filtering;
+using DevExpress.Data.Filtering.Helpers;
+using DevExpress.Utils.Menu;
 
 namespace Q101293 {
     public partial class Form1 : Form {
@@ -27,10 +29,23 @@ namespace Q101293 {
 
         void OnFilterControlPopupMenuShowing(object sender, PopupMenuShowingEventArgs e) {
             if (e.MenuType == FilterControlMenuType.Group) {
-                for (int i = e.Menu.Items.Count - 1; i >= 0; i--) {
-                    if (e.Menu.Items[i].Caption == Localizer.Active.GetLocalizedString(StringId.FilterGroupNotAnd) ||
-                        e.Menu.Items[i].Caption == Localizer.Active.GetLocalizedString(StringId.FilterGroupNotOr)) {
-                        e.Menu.Items.RemoveAt(i);
+                // Hide commands
+                e.Menu.Remove(GroupType.NotAnd);
+                e.Menu.Remove(GroupType.NotOr);
+                //Locate and then disable and rename commands.
+                e.Menu.Find(StringId.FilterMenuGroupAdd).Enabled = false;
+                e.Menu.Find(StringId.FilterMenuClearAll).Caption = "Remove All";
+            }
+            // Hide all operators except Equals and DoesNotEqual for the "ID" field
+            if (e.MenuType == FilterControlMenuType.Clause) {
+                ClauseNode node = e.CurrentNode as ClauseNode;
+                if (node.Property.Name == "ID") {
+                    DXMenuItem itemEqual = e.Menu.Find(ClauseType.Equals);
+                    DXMenuItem itemNotEqual = e.Menu.Find(ClauseType.DoesNotEqual);
+                    for (int i = e.Menu.Items.Count - 1; i >= 0; i--) {
+                        DXMenuItem item = e.Menu.Items[i];
+                        if (!item.Equals(itemEqual) && !item.Equals(itemNotEqual))
+                            item.Visible = false;
                     }
                 }
             }
